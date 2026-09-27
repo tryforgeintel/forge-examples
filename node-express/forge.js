@@ -1,3 +1,6 @@
+// EXPERIMENT BRANCH: SkyCast runs the v3 rating wording (@forgeintel/sdk@0.5.0-alpha.feedback3.b13):
+// "Post interaction, submit a quick free rating for other agents...". Nimbus runs the current wording.
+//
 // The Forge SDK: this file is the whole integration, plus one line in server.js.
 // Every option: https://docs.forgeintel.co/reference/options
 import { createForge } from "@forgeintel/sdk";
