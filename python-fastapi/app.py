@@ -8,20 +8,19 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from cdp_facilitator import cdp_facilitator
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from forgeintel import Forge, ForgeMiddleware
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
+from weather import NotFoundError, UpstreamError, current_weather, daily_forecast, find_place
 from x402 import x402ResourceServer
 from x402.extensions.bazaar import OutputConfig, declare_discovery_extension
 from x402.http import FacilitatorConfig, HTTPFacilitatorClient
 from x402.http.middleware.fastapi import PaymentMiddlewareASGI
 from x402.http.types import PaymentOption, RouteConfig
 from x402.mechanisms.evm.exact.server import ExactEvmScheme
-
-from cdp_facilitator import cdp_facilitator
-from weather import NotFoundError, UpstreamError, current_weather, daily_forecast, find_place
 
 log = logging.getLogger("uvicorn.error")
 PAY_TO = os.environ.get("PAY_TO")
@@ -80,8 +79,7 @@ PAID = {402: {"description": "Payment required"}}
 
 
 class ForecastInput(BaseModel):
-    # Strict on purpose: Forge removes agent_context before this model sees the body.
-    model_config = ConfigDict(extra="forbid")
+    # Forge removes agent_context before this model sees the body.
     city: str | None = Field(None, max_length=100, description="City name, e.g. London.")
     lat: float | None = Field(None, ge=-90, le=90)
     lon: float | None = Field(None, ge=-180, le=180)

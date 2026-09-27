@@ -58,7 +58,7 @@ forge = Forge(api_key=os.getenv("FORGE_API_KEY", ""))
 app.add_middleware(ForgeMiddleware, forge=forge)  # after PaymentMiddlewareASGI
 ```
 
-Starlette runs the last added middleware first, so adding Forge after the payment middleware puts it in front of payments. It then sees the 402s and removes `agent_context` before FastAPI validates the request. That's why `ForecastInput` can forbid extra fields.
+Starlette runs the last added middleware first, so adding Forge after the payment middleware puts it in front of payments. It then sees the 402s and removes `agent_context` before FastAPI validates the request.
 
 FastAPI doesn't know about the 402 your payment middleware returns, so the paid routes declare it (`responses={402: ...}`). That's how Forge tells paid operations apart in `/openapi.json`. The routes also declare a `response_model`, which documents the output for agents and gives Forge a schema to add `forge_feedback` to. Options: [docs.forgeintel.co/reference/options](https://docs.forgeintel.co/reference/options).
 
