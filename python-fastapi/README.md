@@ -55,8 +55,8 @@ The whole integration is [`forge.py`](forge.py), with both switches written out,
 forge = Forge(
     api_key=os.getenv("FORGE_API_KEY", ""),
     public_url=os.getenv("PUBLIC_URL", ""),
-    feedback=True,  # ask agents to rate each paid call
-    agent_context=AgentContextOptions(required=False, search_query=True),  # never reject
+    feedback=True,  # ask agents to rate each paid call (off by default)
+    agent_context=True,  # ask for agent name + search; never reject (off by default)
 )
 
 # app.py, after the payment middleware (Starlette runs the last added first)
@@ -65,9 +65,10 @@ app.add_middleware(ForgeMiddleware, forge=forge)
 
 | Switch | Here | What it does |
 | --- | --- | --- |
-| `feedback` | `True` | Adds the rating ask to the 402, a `forge_feedback` object with a free rating link to paid responses, and the free `/feedback` routes. |
-| `agent_context` `required` | `False` | Asks agents for their name and the search that found you, and records it when sent. `True` rejects paid calls without it (HTTP 400, before payment). `agent_context=False` turns it off. |
-| `agent_context` `search_query` | `True` | Also asks for the search query. |
+| `feedback` | `True` | Adds the rating ask to the 402 (and a preview in the Bazaar example), a `forge_feedback` object with a free rating link to paid responses, and the free `/feedback` routes. Off by default. |
+| `agent_context` | `True` | Asks agents for their name and the search that found you, and records it when sent. `AgentContextOptions(required=True)` rejects paid calls without it (HTTP 400, before payment); `AgentContextOptions(search_query=False)` asks for the name only. Off by default. |
+
+With neither switch, Forge still reports every 402 and paid call to your dashboard, and changes nothing agents see.
 
 FastAPI doesn't know about the 402 your payment middleware returns, so the paid routes declare it (`responses={402: ...}`). That's how Forge tells paid operations apart in `/openapi.json`. The response models document the output for agents, and Forge adds `forge_feedback` to them.
 
