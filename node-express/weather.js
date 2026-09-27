@@ -19,10 +19,22 @@ async function getJson(url, params) {
   try {
     res = await fetch(`${url}?${new URLSearchParams(params)}`, { signal: AbortSignal.timeout(8000) });
   } catch (error) {
+    console.warn(`Open-Meteo unreachable: ${error.cause?.code ?? error.message}`);
     throw new UpstreamError(`weather provider unreachable: ${error.cause?.code ?? error.message}`);
   }
   if (!res.ok) throw new UpstreamError(`weather provider returned ${res.status}`);
   return res.json();
+}
+
+/** City, or lat and lon, from a query string or JSON body. Returns an error message for bad input. */
+export function parseLocation(input) {
+  const city = typeof input.city === "string" ? input.city.trim() : "";
+  if (city) return city.length <= 100 ? { city } : "city is too long";
+  if (input.lat === undefined || input.lon === undefined) return "pass city, or both lat and lon";
+  const lat = Number(input.lat);
+  const lon = Number(input.lon);
+  if (!(lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180)) return "lat must be -90..90 and lon -180..180";
+  return { lat, lon };
 }
 
 /** A city name, or lat/lon, to a place with coordinates. */

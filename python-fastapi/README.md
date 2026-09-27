@@ -48,19 +48,41 @@ The call, and any rating, shows up under **Activity** for your service at [app.f
 
 ## The Forge part
 
-Everything else in [`app.py`](app.py) is a normal x402 FastAPI app. Forge adds three lines:
+The whole integration is [`forge.py`](forge.py), with both switches written out, plus one line in [`app.py`](app.py):
 
 ```python
-from forgeintel import Forge, ForgeMiddleware
+# forge.py
+forge = Forge(
+    api_key=os.getenv("FORGE_API_KEY", ""),
+    public_url=os.getenv("PUBLIC_URL", ""),
+    feedback=True,  # ask agents to rate each paid call
+    agent_context=AgentContextOptions(required=False, search_query=True),  # never reject
+)
 
-forge = Forge(api_key=os.getenv("FORGE_API_KEY", ""))
-
-app.add_middleware(ForgeMiddleware, forge=forge)  # after PaymentMiddlewareASGI
+# app.py, after the payment middleware (Starlette runs the last added first)
+app.add_middleware(ForgeMiddleware, forge=forge)
 ```
 
-Starlette runs the last added middleware first, so adding Forge after the payment middleware puts it in front of payments. It then sees the 402s and removes `agent_context` before FastAPI validates the request.
+| Switch | Here | What it does |
+| --- | --- | --- |
+| `feedback` | `True` | Adds the rating ask to the 402, a `forge_feedback` object with a free rating link to paid responses, and the free `/feedback` routes. |
+| `agent_context` `required` | `False` | Asks agents for their name and the search that found you, and records it when sent. `True` rejects paid calls without it (HTTP 400, before payment). `agent_context=False` turns it off. |
+| `agent_context` `search_query` | `True` | Also asks for the search query. |
 
-FastAPI doesn't know about the 402 your payment middleware returns, so the paid routes declare it (`responses={402: ...}`). That's how Forge tells paid operations apart in `/openapi.json`. The routes also declare a `response_model`, which documents the output for agents and gives Forge a schema to add `forge_feedback` to. Options: [docs.forgeintel.co/reference/options](https://docs.forgeintel.co/reference/options).
+FastAPI doesn't know about the 402 your payment middleware returns, so the paid routes declare it (`responses={402: ...}`). That's how Forge tells paid operations apart in `/openapi.json`. The response models document the output for agents, and Forge adds `forge_feedback` to them.
+
+The rest of the app knows nothing about Forge:
+
+| File | What it is |
+| --- | --- |
+| [`app.py`](app.py) | The FastAPI app and its two routes |
+| [`payments.py`](payments.py) | x402: prices, facilitator, Bazaar listing |
+| [`cdp_facilitator.py`](cdp_facilitator.py) | Signs requests to Coinbase's facilitator (mainnet) |
+| [`models.py`](models.py) | Request and response models |
+| [`weather.py`](weather.py) | Weather data from Open-Meteo |
+| [`pages.py`](pages.py) | Landing page and icons |
+
+All options: [docs.forgeintel.co/reference/options](https://docs.forgeintel.co/reference/options).
 
 ## Go live
 

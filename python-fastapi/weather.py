@@ -1,9 +1,17 @@
 """Weather data from Open-Meteo (https://open-meteo.com): free, no API key."""
 
+import logging
+
 import httpx
+
+log = logging.getLogger("uvicorn.error")
 
 GEOCODE = "https://geocoding-api.open-meteo.com/v1/search"
 FORECAST = "https://api.open-meteo.com/v1/forecast"
+
+
+class InvalidLocation(ValueError):
+    pass
 
 
 class NotFoundError(Exception):
@@ -32,6 +40,7 @@ async def get_json(url: str, params: dict) -> dict:
         async with httpx.AsyncClient(timeout=8) as client:
             response = await client.get(url, params=params)
     except httpx.HTTPError as error:
+        log.warning("Open-Meteo unreachable: %r", error)
         raise UpstreamError(f"weather provider unreachable: {error}") from error
     if response.status_code != 200:
         raise UpstreamError(f"weather provider returned {response.status_code}")
@@ -40,6 +49,8 @@ async def get_json(url: str, params: dict) -> dict:
 
 async def find_place(city: str | None, lat: float | None, lon: float | None) -> dict:
     """A city name, or lat/lon, to a place with coordinates."""
+    if not city and (lat is None or lon is None):
+        raise InvalidLocation("pass city, or both lat and lon")
     if not city:
         return {"name": f"{lat},{lon}", "country": None, "latitude": lat, "longitude": lon}
     params = {"name": city, "count": 1, "language": "en", "format": "json"}

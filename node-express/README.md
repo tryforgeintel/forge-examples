@@ -47,17 +47,38 @@ The call, and any rating, shows up under **Activity** for your service at [app.f
 
 ## The Forge part
 
-Everything else in [`server.js`](server.js) is a normal x402 Express app. Forge adds three lines:
+The whole integration is [`forge.js`](forge.js), with both switches written out, plus one line in [`server.js`](server.js):
 
 ```js
-import { createForge } from "@forgeintel/sdk";
+// forge.js
+export const forge = createForge({
+  apiKey: process.env.FORGE_API_KEY,
+  publicUrl: process.env.PUBLIC_URL,
+  feedback: true,                                        // ask agents to rate each paid call
+  agentContext: { required: false, searchQuery: true },  // ask for agent name + search; never reject
+});
 
-const forge = createForge({ apiKey: process.env.FORGE_API_KEY });
-
-app.use(forge.middleware()); // before paymentMiddleware and your /openapi.json route
+// server.js
+app.use(forge.middleware()); // first: before payments and /openapi.json
 ```
 
-Mount it first, so it sees the 402s your payment middleware returns and can remove `agent_context` before your handlers run. Options: [docs.forgeintel.co/reference/options](https://docs.forgeintel.co/reference/options).
+| Switch | Here | What it does |
+| --- | --- | --- |
+| `feedback` | `true` | Adds the rating ask to the 402, a `forge_feedback` object with a free rating link to paid responses, and the free `/feedback` routes. |
+| `agentContext.required` | `false` | Asks agents for their name and the search that found you, and records it when sent. `true` rejects paid calls without it (HTTP 400, before payment). `agentContext: false` turns it off. |
+| `agentContext.searchQuery` | `true` | Also asks for the search query. |
+
+The rest of the app knows nothing about Forge:
+
+| File | What it is |
+| --- | --- |
+| [`server.js`](server.js) | The Express app and its two routes |
+| [`payments.js`](payments.js) | x402: prices, facilitator, Bazaar listing |
+| [`openapi.js`](openapi.js) | The API description agents read |
+| [`weather.js`](weather.js) | Weather data from Open-Meteo |
+| [`site.js`](site.js) | Landing page and icons |
+
+All options: [docs.forgeintel.co/reference/options](https://docs.forgeintel.co/reference/options).
 
 ## Go live
 
