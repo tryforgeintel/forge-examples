@@ -62,6 +62,7 @@ Mount it first, so it sees the 402s your payment middleware returns and can remo
 ## Go live
 
 - Deploy anywhere that runs Node. Set `FORGE_API_KEY` and `PAY_TO`, and run `npm start`. The server listens on `PORT`.
+- If outbound calls time out with `ETIMEDOUT` on a host far from Open-Meteo's servers, set `NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000`. Node gives each IPv6/IPv4 connection attempt only 250ms by default.
 - Set `PUBLIC_URL` to your public origin, for absolute rating links and the icon in Bazaar listings, and `SERVICE_NAME` to rename the service (default SkyCast).
 - For Base mainnet, set `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` ([Coinbase Developer Platform](https://portal.cdp.coinbase.com)). The example then uses Coinbase's facilitator on `eip155:8453`.
 - Add the deployed domain to your service in Forge. Forge then checks your visibility in agent indexes, your search rankings and the health of your paid routes.
