@@ -1,6 +1,6 @@
-# Python + FastAPI
+# Python + FastAPI (Nimbus)
 
-A paid weather API with FastAPI, [`x402`](https://pypi.org/project/x402/) and the Forge SDK ([`forgeintel-sdk`](https://pypi.org/project/forgeintel-sdk/)). Needs Python 3.10 or later.
+Live at [nimbus.clawca.sh](https://nimbus.clawca.sh). A paid weather API with FastAPI, [`x402`](https://pypi.org/project/x402/) and the Forge SDK ([`forgeintel-sdk`](https://pypi.org/project/forgeintel-sdk/)). Needs Python 3.10 or later.
 
 ## Run it
 
@@ -60,10 +60,11 @@ app.add_middleware(ForgeMiddleware, forge=forge)  # after PaymentMiddlewareASGI
 
 Starlette runs the last added middleware first, so adding Forge after the payment middleware puts it in front of payments. It then sees the 402s and removes `agent_context` before FastAPI validates the request. That's why `ForecastInput` can forbid extra fields.
 
-FastAPI doesn't know about the 402 your payment middleware returns, so the paid routes declare it (`responses={402: ...}`). That's how Forge tells paid operations apart in `/openapi.json`. Options: [docs.forgeintel.co/reference/options](https://docs.forgeintel.co/reference/options).
+FastAPI doesn't know about the 402 your payment middleware returns, so the paid routes declare it (`responses={402: ...}`). That's how Forge tells paid operations apart in `/openapi.json`. The routes also declare a `response_model`, which documents the output for agents and gives Forge a schema to add `forge_feedback` to. Options: [docs.forgeintel.co/reference/options](https://docs.forgeintel.co/reference/options).
 
 ## Go live
 
 - Deploy anywhere that runs Python. Set `FORGE_API_KEY` and `PAY_TO`. The included `Procfile` runs `uvicorn app:app --host 0.0.0.0 --port $PORT`.
-- For Base mainnet, set `NETWORK=eip155:8453` and `FACILITATOR_URL` to a facilitator that settles on Base mainnet.
+- Set `PUBLIC_URL` to your public origin, for absolute rating links and the icon in Bazaar listings, and `SERVICE_NAME` to rename the service (default Nimbus).
+- For Base mainnet, set `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` ([Coinbase Developer Platform](https://portal.cdp.coinbase.com)). The example then uses Coinbase's facilitator on `eip155:8453`; [`cdp_facilitator.py`](cdp_facilitator.py) signs its requests.
 - Add the deployed domain to your service in Forge. Forge then checks your visibility in agent indexes, your search rankings and the health of your paid routes.

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{name}}: weather for AI agents</title>
+<meta name="description" content="{{name}} is a weather API that AI agents pay per call over x402. Current weather and 1-7 day forecasts for any city.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:title" content="{{name}}: weather for AI agents">
+<meta property="og:description" content="Current weather and forecasts, paid per call over x402.">
+<meta property="og:image" content="/icon.png">
+<style>
+  :root { --bg: #ffffff; --fg: #111418; --muted: #5b6470; --line: #e6e8eb; --card: #f7f8f9; --accent: {{accent}}; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0b0c0e; --fg: #eceef1; --muted: #9aa3ad; --line: #22262b; --card: #131519; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 56px 16px 72px; }
+  header { display: flex; align-items: center; gap: 14px; }
+  header img { width: 48px; height: 48px; }
+  h1 { font-size: 28px; margin: 0; letter-spacing: -0.01em; }
+  .tagline { color: var(--muted); margin: 14px 0 32px; font-size: 18px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 40px 0 12px; font-weight: 600; }
+  .route { border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; background: var(--card); }
+  .route-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+  .method { font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: #fff; background: var(--accent); border-radius: 6px; padding: 2px 7px; }
+  .path { font: 600 15px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .price { margin-left: auto; font-weight: 600; }
+  .route p { margin: 8px 0 0; color: var(--muted); }
+  pre { margin: 10px 0 0; padding: 12px 14px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); overflow-x: auto; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  ul { padding-left: 20px; margin: 0; }
+  li { margin: 6px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="/favicon.svg" alt="">
+    <h1>{{name}}</h1>
+  </header>
+  <p class="tagline">Weather for AI agents. Current conditions and 1-7 day forecasts for any city, paid per call in USDC over <a href="https://www.x402.org">x402</a>. No signup, no API key.</p>
+
+  <h2>Endpoints</h2>
+  <div class="route">
+    <div class="route-head"><span class="method">GET</span><span class="path">/weather</span><span class="price">$0.001</span></div>
+    <p>Current temperature, humidity, wind and conditions. Pass <code>city</code>, or <code>lat</code> and <code>lon</code>.</p>
+    <pre>GET /weather?city=London</pre>
+  </div>
+  <div class="route">
+    <div class="route-head"><span class="method">POST</span><span class="path">/forecast</span><span class="price">$0.002</span></div>
+    <p>Daily max/min temperature, precipitation and conditions for 1-7 days.</p>
+    <pre>POST /forecast
+{"city": "London", "days": 3}</pre>
+  </div>
+
+  <h2>Calling it</h2>
+  <ul>
+    <li>Use any x402 client, such as awal or AgentCash. The first request returns <code>402 Payment Required</code> with the price; your client pays and retries.</li>
+    <li>Payments settle on {{network}}. Error responses are never charged.</li>
+    <li>Optionally include <code>agent_context</code> (your agent's name and the search that found us) with the request.</li>
+    <li>Paid responses include a free rating link. Rating the call helps other agents choose.</li>
+  </ul>
+
+  <h2>Machine-readable</h2>
+  <ul>
+    <li><a href="/openapi.json">OpenAPI document</a></li>
+    <li><a href="/health">Health</a></li>
+    <li><a href="/feedback/summary">Ratings from other agents</a></li>
+  </ul>
+
+  <footer>
+    Built with {{stack}} and instrumented with <a href="https://forgeintel.co">Forge</a>. The code is an open example: <a href="{{source}}">view the source</a>. Weather data by <a href="https://open-meteo.com">Open-Meteo</a>.
+  </footer>
+</main>
+</body>
+</html>

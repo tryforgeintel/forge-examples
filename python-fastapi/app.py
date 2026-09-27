@@ -5,8 +5,12 @@ Run: uvicorn app:app --port 4021 --env-file .env
 
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from forgeintel import Forge, ForgeMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 from x402 import x402ResourceServer
 from x402.extensions.bazaar import OutputConfig, declare_discovery_extension
@@ -15,17 +19,24 @@ from x402.http.middleware.fastapi import PaymentMiddlewareASGI
 from x402.http.types import PaymentOption, RouteConfig
 from x402.mechanisms.evm.exact.server import ExactEvmScheme
 
-from forgeintel import Forge, ForgeMiddleware
+from cdp_facilitator import cdp_facilitator
 from weather import NotFoundError, UpstreamError, current_weather, daily_forecast, find_place
 
 PAY_TO = os.environ.get("PAY_TO")
 if not PAY_TO:
     raise RuntimeError("Set PAY_TO to the wallet address that receives payments (see .env.example)")
 
+NAME = os.getenv("SERVICE_NAME", "Nimbus")
+PUBLIC_URL = os.getenv("PUBLIC_URL", "")  # e.g. https://nimbus.clawca.sh
+
 # Base Sepolia testnet through the public x402.org facilitator by default.
-network = os.getenv("NETWORK", "eip155:84532")
+# With CDP API keys set, Coinbase's facilitator on Base mainnet instead.
+cdp_key_id, cdp_key_secret = os.getenv("CDP_API_KEY_ID"), os.getenv("CDP_API_KEY_SECRET")
+network = os.getenv("NETWORK", "eip155:8453" if cdp_key_id and cdp_key_secret else "eip155:84532")
 facilitator = HTTPFacilitatorClient(
-    FacilitatorConfig(url=os.getenv("FACILITATOR_URL", "https://x402.org/facilitator"))
+    cdp_facilitator(cdp_key_id, cdp_key_secret)
+    if cdp_key_id and cdp_key_secret
+    else FacilitatorConfig(url=os.getenv("FACILITATOR_URL", "https://x402.org/facilitator"))
 )
 
 
@@ -35,7 +46,30 @@ async def lifespan(app):
     await facilitator.aclose()  # ForgeMiddleware flushes its own events at shutdown.
 
 
-app = FastAPI(title="Forge Weather Example", version="1.0.0", lifespan=lifespan)
+app = FastAPI(
+    title=NAME,
+    version="1.0.0",
+    description="Weather for AI agents: current weather and 1-7 day forecasts, paid per call over x402.",
+    lifespan=lifespan,
+)
+
+# The free landing page and icons.
+PUBLIC = Path(__file__).parent / "public"
+network_label = {"eip155:8453": "Base", "eip155:84532": "Base Sepolia (testnet)"}.get(network, network)
+LANDING = (
+    (PUBLIC / "index.html")
+    .read_text()
+    .replace("{{name}}", NAME)
+    .replace("{{accent}}", "#2563EB")
+    .replace("{{stack}}", "Python and FastAPI")
+    .replace("{{network}}", network_label)
+    .replace("{{source}}", "https://github.com/tryforgeintel/forge-examples/tree/main/python-fastapi")
+)
+
+
+@app.get("/", include_in_schema=False)
+async def landing():
+    return HTMLResponse(LANDING)
 
 
 # Your routes, as you would write them without Forge. Declaring the 402 response
@@ -52,6 +86,41 @@ class ForecastInput(BaseModel):
     days: int = Field(3, ge=1, le=7)
 
 
+# Response models document the output for agents. Forge adds its forge_feedback
+# field to these schemas in /openapi.json.
+class Location(BaseModel):
+    name: str
+    country: str | None
+    latitude: float
+    longitude: float
+
+
+class Current(BaseModel):
+    time: str
+    temperature_c: float
+    humidity_pct: float
+    wind_speed_kmh: float
+    condition: str
+
+
+class Day(BaseModel):
+    date: str
+    temperature_max_c: float
+    temperature_min_c: float
+    precipitation_mm: float | None
+    condition: str
+
+
+class WeatherOutput(BaseModel):
+    location: Location
+    current: Current
+
+
+class ForecastOutput(BaseModel):
+    location: Location
+    days: list[Day]
+
+
 async def lookup(city: str | None, lat: float | None, lon: float | None) -> dict:
     # x402 only settles 2xx/3xx responses, so a 400 for bad input costs the agent nothing.
     if not city and (lat is None or lon is None):
@@ -64,7 +133,7 @@ async def lookup(city: str | None, lat: float | None, lon: float | None) -> dict
         raise HTTPException(502, str(error)) from error
 
 
-@app.get("/weather", responses=PAID)
+@app.get("/weather", response_model=WeatherOutput, responses=PAID)
 async def weather(
     city: str | None = Query(None, max_length=100, description="City name, e.g. London."),
     lat: float | None = Query(None, ge=-90, le=90),
@@ -78,7 +147,7 @@ async def weather(
         raise HTTPException(502, str(error)) from error
 
 
-@app.post("/forecast", responses=PAID)
+@app.post("/forecast", response_model=ForecastOutput, responses=PAID)
 async def forecast(body: ForecastInput):
     """1-7 day forecast for a city or lat/lon: max/min temperature, precipitation, conditions."""
     place = await lookup(body.city, body.lat, body.lon)
@@ -93,6 +162,13 @@ async def health():
     return {"ok": True, "network": network, "forge": forge.enabled}
 
 
+app.mount("/", StaticFiles(directory=PUBLIC), name="static")  # after the routes: favicon, icons
+
+
+# How the service is named in Bazaar listings.
+listing = {"service_name": NAME, "tags": ["weather", "forecast"]}
+if PUBLIC_URL:
+    listing["icon_url"] = f"{PUBLIC_URL}/icon.png"
 location_schema = {
     "city": {"type": "string"},
     "lat": {"type": "number"},
@@ -103,6 +179,7 @@ routes = {
         accepts=PaymentOption(scheme="exact", pay_to=PAY_TO, price="$0.001", network=network),
         description="Current weather for a city or lat/lon: temperature, humidity, wind, conditions.",
         mime_type="application/json",
+        **listing,
         extensions=declare_discovery_extension(
             input={"city": "London"},
             input_schema={"properties": location_schema},
@@ -118,6 +195,7 @@ routes = {
         accepts=PaymentOption(scheme="exact", pay_to=PAY_TO, price="$0.002", network=network),
         description="1-7 day forecast for a city or lat/lon: max/min temperature, precipitation, conditions.",
         mime_type="application/json",
+        **listing,
         extensions=declare_discovery_extension(
             body_type="json",
             input={"city": "London", "days": 3},
@@ -142,7 +220,7 @@ app.add_middleware(PaymentMiddlewareASGI, routes=routes, server=server)
 # Forge. Without FORGE_API_KEY it logs one warning and stays out of the way.
 forge = Forge(
     api_key=os.getenv("FORGE_API_KEY", ""),
-    public_url=os.getenv("PUBLIC_URL", ""),  # optional: your public origin, for absolute rating links
+    public_url=PUBLIC_URL,  # optional: your public origin, for absolute rating links
 )
 # Added LAST so Starlette runs it FIRST: before payments and FastAPI's /openapi.json.
 app.add_middleware(ForgeMiddleware, forge=forge)

@@ -1,4 +1,5 @@
 // A paid weather API: Express + x402 payments + the Forge SDK.
+import { readFileSync } from "node:fs";
 import express from "express";
 import { facilitator as cdpFacilitator } from "@coinbase/x402";
 import { HTTPFacilitatorClient } from "@x402/core/server";
@@ -11,6 +12,8 @@ import { currentWeather, dailyForecast, findPlace, NotFoundError, UpstreamError 
 const env = process.env;
 const port = Number(env.PORT ?? 4021);
 if (!env.PAY_TO) throw new Error("Set PAY_TO to the wallet address that receives payments (see .env.example)");
+const name = env.SERVICE_NAME ?? "SkyCast";
+const publicUrl = env.PUBLIC_URL; // e.g. https://skycast.clawca.sh
 
 // Base Sepolia testnet through the public x402.org facilitator by default.
 // With CDP API keys set, Coinbase's facilitator on Base mainnet instead.
@@ -21,16 +24,19 @@ const facilitator = new HTTPFacilitatorClient(cdp ? cdpFacilitator : { url: env.
 // 1. Forge. Without FORGE_API_KEY it logs one warning and stays out of the way.
 const forge = createForge({
   apiKey: env.FORGE_API_KEY,
-  publicUrl: env.PUBLIC_URL, // optional: your public origin, for absolute rating links
+  publicUrl, // optional: your public origin, for absolute rating links
 });
 
 // 2. Your x402 routes, as you would write them without Forge.
 const place = { city: "London" };
+// How the service is named in Bazaar listings.
+const listing = { serviceName: name, tags: ["weather", "forecast"], ...(publicUrl ? { iconUrl: `${publicUrl}/icon.png` } : {}) };
 const routes = {
   "GET /weather": {
     accepts: { scheme: "exact", price: "$0.001", network, payTo: env.PAY_TO },
     description: "Current weather for a city or lat/lon: temperature, humidity, wind, conditions.",
     mimeType: "application/json",
+    ...listing,
     extensions: declareDiscoveryExtension({
       input: place,
       inputSchema: { properties: { city: { type: "string" }, lat: { type: "number" }, lon: { type: "number" } } },
@@ -41,6 +47,7 @@ const routes = {
     accepts: { scheme: "exact", price: "$0.002", network, payTo: env.PAY_TO },
     description: "1-7 day forecast for a city or lat/lon: max/min temperature, precipitation, conditions.",
     mimeType: "application/json",
+    ...listing,
     extensions: declareDiscoveryExtension({
       bodyType: "json",
       input: { ...place, days: 3 },
@@ -56,6 +63,16 @@ app.set("trust proxy", true); // behind a TLS proxy (Railway, Render, Fly), so r
 // 3. Forge first: before payments and your /openapi.json route.
 app.use(forge.middleware());
 app.use(express.json());
+
+// The free landing page and icons.
+const landing = readFileSync(new URL("./public/index.html", import.meta.url), "utf8")
+  .replaceAll("{{name}}", name)
+  .replaceAll("{{accent}}", "#F04B14")
+  .replaceAll("{{stack}}", "Node.js and Express")
+  .replaceAll("{{network}}", network === "eip155:8453" ? "Base" : network === "eip155:84532" ? "Base Sepolia (testnet)" : network)
+  .replaceAll("{{source}}", "https://github.com/tryforgeintel/forge-examples/tree/main/node-express");
+app.get("/", (_req, res) => res.type("html").send(landing));
+app.use(express.static(new URL("./public", import.meta.url).pathname, { index: false, maxAge: "1d" }));
 
 // 4. Payments.
 app.use(paymentMiddleware(routes, new x402ResourceServer(facilitator).register(network, new ExactEvmScheme())));
@@ -115,7 +132,7 @@ const locationFields = {
 };
 const openapi = {
   openapi: "3.1.0",
-  info: { title: "Forge Weather Example", version: "1.0.0", description: "Current weather and forecasts, paid per call over x402." },
+  info: { title: name, version: "1.0.0", description: "Weather for AI agents: current weather and 1-7 day forecasts, paid per call over x402." },
   paths: {
     "/weather": {
       get: {
@@ -137,6 +154,6 @@ const openapi = {
   },
 };
 
-const server = app.listen(port, () => console.log(`Weather API on http://localhost:${port} (${network})`));
+const server = app.listen(port, () => console.log(`${name} on http://localhost:${port} (${network})`));
 // Flush Forge's background events on shutdown.
 process.on("SIGTERM", () => server.close(() => forge.shutdown()));
