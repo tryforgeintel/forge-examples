@@ -1,0 +1,23 @@
+{
+  "name": "forge-example-node-express",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A paid weather API: Express, x402 payments and the Forge SDK.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "node --env-file=.env server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@coinbase/x402": "^2.1.0",
+    "@forgeintel/sdk": "^0.5.0-beta.11",
+    "@x402/core": "^2.27.0",
+    "@x402/evm": "^2.27.0",
+    "@x402/express": "^2.27.0",
+    "@x402/extensions": "^2.27.0",
+    "express": "^5.1.0"
+  }
+}
