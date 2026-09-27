@@ -8,14 +8,17 @@ export const forge = createForge({
   // Your public origin (e.g. https://skycast.clawca.sh), so rating links are absolute.
   publicUrl: process.env.PUBLIC_URL,
 
-  // Feedback: ask agents to rate each paid call. Adds the ask to the 402, a forge_feedback
-  // object with a free rating link to paid responses, and the free /feedback routes.
+  // Both switches are off by default: with only the key, Forge reports your paid traffic
+  // and changes nothing agents see.
+
+  // Feedback: ask agents to rate each paid call. Adds the ask to the 402 (and a preview in your
+  // Bazaar example), a forge_feedback object with a free rating link to paid responses, and
+  // the free /feedback routes.
   feedback: true,
 
   // Agent context: ask agents for their name and the search that led them here.
-  //   required: false  records it when sent, never rejects a call (default)
-  //   required: true   rejects paid calls without it (HTTP 400, before payment)
-  //   searchQuery      also ask for the search query
-  // Set agentContext: false to turn it off.
-  agentContext: { required: false, searchQuery: true },
+  //   true                records it when sent, never rejects a call
+  //   { required: true }  rejects paid calls without it (HTTP 400, before payment)
+  //   { searchQuery: false } asks for the agent name only
+  agentContext: true,
 });
