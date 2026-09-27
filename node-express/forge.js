@@ -1,3 +1,6 @@
+// EXPERIMENT BRANCH: SkyCast runs the oldfeedback.1 rating wording (@forgeintel/sdk@0.5.0-alpha.oldfeedback.1.b13)
+// for an A/B against Nimbus, which runs the current wording. Everything else matches main.
+//
 // The Forge SDK: this file is the whole integration, plus one line in server.js.
 // Every option: https://docs.forgeintel.co/reference/options
 import { createForge } from "@forgeintel/sdk";
