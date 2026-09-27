@@ -91,7 +91,11 @@ function location(input) {
 
 function fail(res, error) {
   if (error instanceof NotFoundError) return res.status(404).json({ error: error.message });
-  if (error instanceof UpstreamError) return res.status(502).json({ error: error.message });
+  // 503, not 502: proxies like Cloudflare replace 502 bodies with their own error page.
+  if (error instanceof UpstreamError) {
+    console.warn(error.message);
+    return res.status(503).json({ error: error.message });
+  }
   console.error(error);
   res.status(500).json({ error: "internal_error" });
 }

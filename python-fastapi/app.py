@@ -3,6 +3,7 @@
 Run: uvicorn app:app --port 4021 --env-file .env
 """
 
+import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -22,6 +23,7 @@ from x402.mechanisms.evm.exact.server import ExactEvmScheme
 from cdp_facilitator import cdp_facilitator
 from weather import NotFoundError, UpstreamError, current_weather, daily_forecast, find_place
 
+log = logging.getLogger("uvicorn.error")
 PAY_TO = os.environ.get("PAY_TO")
 if not PAY_TO:
     raise RuntimeError("Set PAY_TO to the wallet address that receives payments (see .env.example)")
@@ -130,7 +132,9 @@ async def lookup(city: str | None, lat: float | None, lon: float | None) -> dict
     except NotFoundError as error:
         raise HTTPException(404, str(error)) from error
     except UpstreamError as error:
-        raise HTTPException(502, str(error)) from error
+        # 503, not 502: proxies like Cloudflare replace 502 bodies with their own error page.
+        log.warning("%s", error)
+        raise HTTPException(503, str(error)) from error
 
 
 @app.get("/weather", response_model=WeatherOutput, responses=PAID)
@@ -144,7 +148,9 @@ async def weather(
     try:
         return {"location": place, "current": await current_weather(place)}
     except UpstreamError as error:
-        raise HTTPException(502, str(error)) from error
+        # 503, not 502: proxies like Cloudflare replace 502 bodies with their own error page.
+        log.warning("%s", error)
+        raise HTTPException(503, str(error)) from error
 
 
 @app.post("/forecast", response_model=ForecastOutput, responses=PAID)
@@ -154,7 +160,9 @@ async def forecast(body: ForecastInput):
     try:
         return {"location": place, "days": await daily_forecast(place, body.days)}
     except UpstreamError as error:
-        raise HTTPException(502, str(error)) from error
+        # 503, not 502: proxies like Cloudflare replace 502 bodies with their own error page.
+        log.warning("%s", error)
+        raise HTTPException(503, str(error)) from error
 
 
 @app.get("/health")

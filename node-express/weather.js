@@ -19,7 +19,7 @@ async function getJson(url, params) {
   try {
     res = await fetch(`${url}?${new URLSearchParams(params)}`, { signal: AbortSignal.timeout(8000) });
   } catch (error) {
-    throw new UpstreamError(`weather provider unreachable: ${error.message}`);
+    throw new UpstreamError(`weather provider unreachable: ${error.cause?.code ?? error.message}`);
   }
   if (!res.ok) throw new UpstreamError(`weather provider returned ${res.status}`);
   return res.json();
