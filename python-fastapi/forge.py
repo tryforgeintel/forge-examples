@@ -5,7 +5,7 @@ Every option: https://docs.forgeintel.co/reference/options
 
 import os
 
-from forgeintel import AgentContextOptions, Forge
+from forgeintel import Forge
 
 forge = Forge(
     # Your service's SDK key from app.forgeintel.co. Without it, Forge stays out of the way.
@@ -20,5 +20,5 @@ forge = Forge(
     #   required=True   rejects paid calls without it (HTTP 400, before payment)
     #   search_query    also ask for the search query
     # Set agent_context=False to turn it off.
-    agent_context=AgentContextOptions(required=False, search_query=True),
+    agent_context=False,  # off for the feedback experiment; main has AgentContextOptions(...)
 )
