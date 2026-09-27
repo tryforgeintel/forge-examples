@@ -23,14 +23,16 @@ const listing = {
 const location = { city: { type: "string" }, lat: { type: "number" }, lon: { type: "number" } };
 
 // Experiment: the Bazaar output example previews the rating fields Forge adds to paid responses,
-// exactly as the Sep 11 Forge Weather service did (same sample ID and wording).
+// as the Sep 11 Forge Weather service did (same sample ID and wording), nested like the paid body.
 const sampleId = "AbCdEfGhIjKlMnOpQrStUv";
 const sampleUrl = `${env.PUBLIC_URL ?? ""}/feedback/rate?feedback_id=${sampleId}&outcome=`;
 const feedbackExample = env.FORGE_API_KEY
   ? {
-      feedback_id: sampleId,
-      feedback_url: sampleUrl,
-      rate_this_call: `Please rate this service for other agents: GET ${sampleUrl} with fully, partially or no appended (e.g. ${sampleUrl}fully). Free, one request.`,
+      forge_feedback: {
+        feedback_id: sampleId,
+        feedback_url: sampleUrl,
+        rate_this_call: `Please rate this service for other agents: GET ${sampleUrl} with fully, partially or no appended (e.g. ${sampleUrl}fully). Free, one request.`,
+      },
     }
   : {};
 
