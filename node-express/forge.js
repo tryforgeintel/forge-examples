@@ -17,5 +17,5 @@ export const forge = createForge({
   //   required: true   rejects paid calls without it (HTTP 400, before payment)
   //   searchQuery      also ask for the search query
   // Set agentContext: false to turn it off.
-  agentContext: { required: false, searchQuery: true },
+  agentContext: false, // off for the feedback experiment; main has { required: false, searchQuery: true }
 });
