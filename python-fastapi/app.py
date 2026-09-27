@@ -36,7 +36,12 @@ async def lifespan(app):
     await facilitator.aclose()  # ForgeMiddleware sends its queued events on shutdown by itself
 
 
-app = FastAPI(title=SERVICE_NAME, version="1.0.0", lifespan=lifespan)
+app = FastAPI(
+    title=SERVICE_NAME,
+    version="1.0.0",
+    description="Weather for AI agents: current weather and 1-7 day forecasts, paid per call over x402.",
+    lifespan=lifespan,
+)
 
 # Declaring the 402 tells Forge (through /openapi.json) which routes are paid.
 PAID = {402: {"description": "Payment required"}}
@@ -74,6 +79,22 @@ for error, status in {InvalidLocation: 400, NotFoundError: 404, UpstreamError: 5
     )
 
 add_pages(app)
+
+# How to use the API, for agents, in /openapi.json. Forge appends its rating ask to this.
+GUIDANCE = (
+    'Weather for any city. GET /weather?city=London for current conditions ($0.001); POST /forecast with {"city": "London", "days": 3} for a 1-7 day forecast ($0.002). '
+    "Pass city, or lat and lon. Error responses are never charged."
+)
+fastapi_openapi = app.openapi
+
+
+def openapi_with_guidance():
+    schema = fastapi_openapi()  # FastAPI builds it once and caches it
+    schema["info"]["x-guidance"] = GUIDANCE
+    return schema
+
+
+app.openapi = openapi_with_guidance
 
 # Starlette runs the last added middleware first: Forge, then payments, then your routes.
 app.add_middleware(PaymentMiddlewareASGI, routes=routes, server=server)
