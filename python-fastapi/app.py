@@ -9,6 +9,7 @@
 Run: uvicorn app:app --port 4021 --env-file .env
 """
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Query
@@ -17,7 +18,7 @@ from forgeintel import ForgeMiddleware
 from x402.http.middleware.fastapi import PaymentMiddlewareASGI
 
 from forge import forge
-from models import ForecastInput, ForecastOutput, WeatherOutput
+from models import Error, ForecastInput, ForecastOutput, WeatherOutput
 from pages import add_pages
 from payments import SERVICE_NAME, facilitator, network, routes, server
 from weather import (
@@ -40,33 +41,64 @@ app = FastAPI(
     title=SERVICE_NAME,
     version="1.0.0",
     description="Weather for AI agents: current weather and 1-7 day forecasts, paid per call over x402.",
+    contact={"name": "Forge examples", "url": "https://github.com/tryforgeintel/forge-examples"},
+    license_info={"name": "MIT", "identifier": "MIT"},
+    servers=[{"url": os.environ["PUBLIC_URL"]}] if os.getenv("PUBLIC_URL") else None,
+    openapi_tags=[{"name": "weather", "description": "Paid weather data, per call over x402."}],
     lifespan=lifespan,
 )
 
-# Declaring the 402 tells Forge (through /openapi.json) which routes are paid.
-PAID = {402: {"description": "Payment required"}}
+
+def paid(amount: str) -> dict:
+    """The 402 tells Forge the route is paid; x-payment-info tells agent wallets (AgentCash, x402scan) the price.
+    security: [] says no API key or login: x402 payment is not OpenAPI auth."""
+    return {
+        "responses": {
+            400: {"model": Error, "description": "Invalid input. Not charged."},
+            402: {"description": f"Payment required (${amount})"},
+            404: {"model": Error, "description": "City not found. Not charged."},
+            503: {"model": Error, "description": "Weather provider unavailable. Not charged; retry later."},
+        },
+        "openapi_extra": {
+            "security": [],
+            "x-payment-info": {"price": {"mode": "fixed", "currency": "USD", "amount": amount}, "protocols": [{"x402": {}}]}
+        },
+        "tags": ["weather"],
+    }
 
 
 # Your routes. Forge has already removed agent_context from the query and body.
-@app.get("/weather", response_model=WeatherOutput, responses=PAID)
+@app.get(
+    "/weather",
+    response_model=WeatherOutput,
+    operation_id="getWeather",
+    summary="Current weather for a city or lat/lon: temperature, humidity, wind, conditions.",
+    **paid("0.001"),
+)
 async def weather(
-    city: str | None = Query(None, max_length=100, description="City name, e.g. London."),
-    lat: float | None = Query(None, ge=-90, le=90),
-    lon: float | None = Query(None, ge=-180, le=180),
+    city: str | None = Query(None, max_length=100, description="City name, e.g. London. Or pass lat and lon."),
+    lat: float | None = Query(None, ge=-90, le=90, description="Latitude, with lon, instead of city."),
+    lon: float | None = Query(None, ge=-180, le=180, description="Longitude, with lat, instead of city."),
 ):
-    """Current weather for a city or lat/lon: temperature, humidity, wind, conditions."""
+    """Current conditions for one place, from Open-Meteo. Pass city, or lat and lon. $0.001 per call over x402."""
     place = await find_place(city, lat, lon)
     return {"location": place, "current": await current_weather(place)}
 
 
-@app.post("/forecast", response_model=ForecastOutput, responses=PAID)
+@app.post(
+    "/forecast",
+    response_model=ForecastOutput,
+    operation_id="getForecast",
+    summary="1-7 day forecast for a city or lat/lon: max/min temperature, precipitation, conditions.",
+    **paid("0.002"),
+)
 async def forecast(body: ForecastInput):
-    """1-7 day forecast for a city or lat/lon: max/min temperature, precipitation, conditions."""
+    """Daily forecast for one place, from Open-Meteo. Pass city, or lat and lon, and days (default 3). $0.002 per call over x402."""
     place = await find_place(body.city, body.lat, body.lon)
     return {"location": place, "days": await daily_forecast(place, body.days)}
 
 
-@app.get("/health")
+@app.get("/health", operation_id="health", summary="Service health", openapi_extra={"security": []})
 async def health():
     return {"ok": True, "network": network, "forge": forge.enabled}
 
