@@ -54,8 +54,8 @@ The whole integration is [`forge.js`](forge.js), with both switches written out,
 export const forge = createForge({
   apiKey: process.env.FORGE_API_KEY,
   publicUrl: process.env.PUBLIC_URL,
-  feedback: true,                                        // ask agents to rate each paid call
-  agentContext: { required: false, searchQuery: true },  // ask for agent name + search; never reject
+  feedback: true,     // ask agents to rate each paid call (off by default)
+  agentContext: true, // ask for agent name + search; never reject (off by default)
 });
 
 // server.js
@@ -64,9 +64,10 @@ app.use(forge.middleware()); // first: before payments and /openapi.json
 
 | Switch | Here | What it does |
 | --- | --- | --- |
-| `feedback` | `true` | Adds the rating ask to the 402, a `forge_feedback` object with a free rating link to paid responses, and the free `/feedback` routes. |
-| `agentContext.required` | `false` | Asks agents for their name and the search that found you, and records it when sent. `true` rejects paid calls without it (HTTP 400, before payment). `agentContext: false` turns it off. |
-| `agentContext.searchQuery` | `true` | Also asks for the search query. |
+| `feedback` | `true` | Adds the rating ask to the 402 (and a preview in the Bazaar example), a `forge_feedback` object with a free rating link to paid responses, and the free `/feedback` routes. Off by default. |
+| `agentContext` | `true` | Asks agents for their name and the search that found you, and records it when sent. `{ required: true }` rejects paid calls without it (HTTP 400, before payment); `{ searchQuery: false }` asks for the name only. Off by default. |
+
+With neither switch, Forge still reports every 402 and paid call to your dashboard, and changes nothing agents see.
 
 The rest of the app knows nothing about Forge:
 
