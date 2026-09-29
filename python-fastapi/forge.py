@@ -24,4 +24,7 @@ forge = Forge(
     #   AgentContextOptions(required=True)  rejects paid calls without it (HTTP 400, before payment)
     #   AgentContextOptions(search_query=False)  asks for the agent name only
     agent_context=False,  # off on this live service, to isolate the feedback ask; main has True
+    # x402 discovery: serve /.well-known/x402 (your paid endpoints, for x402 indexes like x402scan) when you
+    # don't serve one. Off by default.
+    x402_discovery=True,
 )
