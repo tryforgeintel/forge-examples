@@ -56,6 +56,7 @@ export const forge = createForge({
   publicUrl: process.env.PUBLIC_URL,
   feedback: true,     // ask agents to rate each paid call (off by default)
   agentContext: true, // ask for agent name + search; never reject (off by default)
+  x402Discovery: true, // serve /.well-known/x402 for x402 indexes (off by default)
 });
 
 // server.js
@@ -66,6 +67,7 @@ app.use(forge.middleware()); // first: before payments and /openapi.json
 | --- | --- | --- |
 | `feedback` | `true` | Adds the rating ask to the 402 (and a preview in the Bazaar example), a `forge_feedback` object with a free rating link to paid responses, and the free `/feedback` routes. Off by default. |
 | `agentContext` | `true` | Asks agents for their name and the search that found you, and records it when sent. `{ required: true }` rejects paid calls without it (HTTP 400, before payment); `{ searchQuery: false }` asks for the name only. Off by default. |
+| `x402Discovery` | `true` | Serves `/.well-known/x402`, the list of your paid endpoints that x402 indexes crawl, since this app doesn't serve one. Off by default. With `feedback` on, Forge also serves `/.well-known/forge-feedback.json`. |
 
 With neither switch, Forge still reports every 402 and paid call to your dashboard, and changes nothing agents see.
 

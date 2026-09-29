@@ -21,4 +21,8 @@ export const forge = createForge({
   //   { required: true }  rejects paid calls without it (HTTP 400, before payment)
   //   { searchQuery: false } asks for the agent name only
   agentContext: false, // off on this live service, to isolate the feedback ask; main has true
+
+  // x402 discovery: serve /.well-known/x402 (your paid endpoints, for x402 indexes like x402scan) when you
+  // don't serve one. Off by default.
+  x402Discovery: true,
 });
