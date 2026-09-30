@@ -3,6 +3,7 @@
 //   /.well-known/agent-skills/index.json       the skill index (Agent Skills discovery, agentskills.io)
 //   /.well-known/agent-skills/<name>/SKILL.md  how to call it, as an Agent Skill
 //   /skill.md                                  the same skill, at the path agents often try first
+//   /robots.txt and /sitemap.xml               crawl rules and the pages above, for crawlers
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import express from "express";
@@ -16,6 +17,8 @@ const SKILL_PATH = `/.well-known/agent-skills/${slug}/SKILL.md`;
 const template = (file) => readFileSync(new URL(`./agent-files/${file}`, import.meta.url), "utf8");
 const llms = template("llms.txt");
 const skill = template("SKILL.md");
+const robots = template("robots.txt");
+const sitemap = template("sitemap.xml");
 
 function fill(text, origin) {
   return text
@@ -28,15 +31,16 @@ function fill(text, origin) {
 
 // Absolute links: PUBLIC_URL when set, else the origin the request came in on.
 const originOf = (req) => process.env.PUBLIC_URL?.replace(/\/$/, "") ?? `${req.protocol}://${req.get("host")}`;
-const markdown = (res, text) => res.type("text/markdown; charset=utf-8").set("Cache-Control", "public, max-age=300").send(text);
+const serve = (type, text) => (req, res) =>
+  res.type(type).set("Cache-Control", "public, max-age=300").send(fill(text, originOf(req)));
+const TEXT = "text/plain; charset=utf-8";
 
 export const agents = express.Router();
 
-agents.get("/llms.txt", (req, res) =>
-  res.type("text/plain; charset=utf-8").set("Cache-Control", "public, max-age=300").send(fill(llms, originOf(req))),
-);
-
-agents.get([SKILL_PATH, "/skill.md", "/SKILL.md"], (req, res) => markdown(res, fill(skill, originOf(req))));
+agents.get("/llms.txt", serve(TEXT, llms));
+agents.get("/robots.txt", serve(TEXT, robots));
+agents.get("/sitemap.xml", serve("application/xml; charset=utf-8", sitemap));
+agents.get([SKILL_PATH, "/skill.md", "/SKILL.md"], serve("text/markdown; charset=utf-8", skill));
 
 agents.get("/.well-known/agent-skills/index.json", (req, res) => {
   const body = fill(skill, originOf(req));
