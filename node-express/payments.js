@@ -12,6 +12,7 @@ if (!env.PAY_TO) throw new Error("Set PAY_TO to the wallet address that receives
 // With CDP API keys set, Coinbase's facilitator on Base mainnet instead.
 const cdp = Boolean(env.CDP_API_KEY_ID && env.CDP_API_KEY_SECRET);
 export const network = env.NETWORK ?? (cdp ? "eip155:8453" : "eip155:84532");
+export const networkName = network === "eip155:8453" ? "Base" : network === "eip155:84532" ? "Base Sepolia (testnet)" : network;
 const facilitator = new HTTPFacilitatorClient(cdp ? cdpFacilitator : { url: env.FACILITATOR_URL ?? "https://x402.org/facilitator" });
 
 // How the service shows up in Bazaar listings.
