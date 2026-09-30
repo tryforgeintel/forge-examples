@@ -19,6 +19,7 @@ SERVICE_NAME = os.getenv("SERVICE_NAME", "Nimbus")
 # With CDP API keys set, Coinbase's facilitator on Base mainnet instead.
 key_id, key_secret = os.getenv("CDP_API_KEY_ID"), os.getenv("CDP_API_KEY_SECRET")
 network = os.getenv("NETWORK", "eip155:8453" if key_id and key_secret else "eip155:84532")
+NETWORK_NAME = {"eip155:8453": "Base", "eip155:84532": "Base Sepolia (testnet)"}.get(network, network)
 facilitator = HTTPFacilitatorClient(
     cdp_facilitator(key_id, key_secret)
     if key_id and key_secret

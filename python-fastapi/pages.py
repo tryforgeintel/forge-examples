@@ -6,17 +6,16 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from payments import SERVICE_NAME, network
+from payments import NETWORK_NAME, SERVICE_NAME
 
 PUBLIC = Path(__file__).parent / "public"
-NETWORKS = {"eip155:8453": "Base", "eip155:84532": "Base Sepolia (testnet)"}
 PAGE = (
     (PUBLIC / "index.html")
     .read_text()
     .replace("{{name}}", SERVICE_NAME)
     .replace("{{accent}}", "#2563EB")
     .replace("{{stack}}", "Python and FastAPI")
-    .replace("{{network}}", NETWORKS.get(network, network))
+    .replace("{{network}}", NETWORK_NAME)
     .replace(
         "{{source}}", "https://github.com/tryforgeintel/forge-examples/tree/main/python-fastapi"
     )

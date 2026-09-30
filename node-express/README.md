@@ -86,7 +86,7 @@ The rest of the app knows nothing about Forge:
 | [`openapi.js`](openapi.js) | The API description agents read |
 | [`weather.js`](weather.js) | Weather data from Open-Meteo |
 | [`site.js`](site.js) | Landing page and icons |
-| [`agents.js`](agents.js) | `/llms.txt` and the agent skill (`SKILL.md`), filled in from [`agent-files/`](agent-files) |
+| [`agents.js`](agents.js) | `/llms.txt`, the agent skill (`SKILL.md`), `/robots.txt` and `/sitemap.xml`, filled in from [`agent-files/`](agent-files) |
 
 All options: [docs.forgeintel.co/reference/options](https://docs.forgeintel.co/reference/options).
 
