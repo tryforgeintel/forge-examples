@@ -26,6 +26,12 @@ curl -s -D - -o /dev/null "localhost:4021/weather?city=London" \
   | grep -i payment-required | cut -d' ' -f2 | tr -d '\r' | base64 -d
 # the decoded challenge: the rating ask, and the forge-feedback and forge-agent-context extensions
 
+curl localhost:4021/llms.txt
+# what the service is, with links (llmstxt.org)
+
+curl localhost:4021/.well-known/agent-skills/index.json
+# the skill index; the skill itself is at /.well-known/agent-skills/nimbus/SKILL.md (and /skill.md)
+
 curl localhost:4021/openapi.json
 # FastAPI's spec, with agent context, rating fields and the free /feedback routes
 ```
@@ -84,6 +90,7 @@ The rest of the app knows nothing about Forge:
 | [`models.py`](models.py) | Request and response models |
 | [`weather.py`](weather.py) | Weather data from Open-Meteo |
 | [`pages.py`](pages.py) | Landing page and icons |
+| [`agents.py`](agents.py) | `/llms.txt`, the agent skill (`SKILL.md`), `/robots.txt` and `/sitemap.xml`, filled in from [`agent-files/`](agent-files) |
 
 All options: [docs.forgeintel.co/reference/options](https://docs.forgeintel.co/reference/options).
 

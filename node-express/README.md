@@ -25,6 +25,12 @@ curl -s -D - -o /dev/null "localhost:4021/weather?city=London" \
   | grep -i payment-required | cut -d' ' -f2 | tr -d '\r' | base64 -d
 # the decoded challenge: the rating ask, and the forge-feedback and forge-agent-context extensions
 
+curl localhost:4021/llms.txt
+# what the service is, with links (llmstxt.org)
+
+curl localhost:4021/.well-known/agent-skills/index.json
+# the skill index; the skill itself is at /.well-known/agent-skills/skycast/SKILL.md (and /skill.md)
+
 curl localhost:4021/openapi.json
 # your spec, with agent context, rating fields and the free /feedback routes
 ```
@@ -80,6 +86,7 @@ The rest of the app knows nothing about Forge:
 | [`openapi.js`](openapi.js) | The API description agents read |
 | [`weather.js`](weather.js) | Weather data from Open-Meteo |
 | [`site.js`](site.js) | Landing page and icons |
+| [`agents.js`](agents.js) | `/llms.txt`, the agent skill (`SKILL.md`), `/robots.txt` and `/sitemap.xml`, filled in from [`agent-files/`](agent-files) |
 
 All options: [docs.forgeintel.co/reference/options](https://docs.forgeintel.co/reference/options).
 

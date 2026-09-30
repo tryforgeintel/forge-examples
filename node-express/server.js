@@ -5,7 +5,9 @@
 //   openapi.js   the API description agents read
 //   weather.js   weather data from Open-Meteo
 //   site.js      landing page and icons
+//   agents.js    llms.txt and the agent skill (SKILL.md)
 import express from "express";
+import { agents } from "./agents.js";
 import { forge } from "./forge.js";
 import { openapi } from "./openapi.js";
 import { network, payments } from "./payments.js";
@@ -19,6 +21,7 @@ app.use(forge.middleware()); // Forge first: before payments and /openapi.json
 app.use(express.json());
 app.use(payments);
 app.use(site);
+app.use(agents);
 
 // Your routes. Forge has already removed agent_context from req.query and req.body.
 // x402 only charges for 2xx/3xx responses, so a 400 for bad input costs the agent nothing.

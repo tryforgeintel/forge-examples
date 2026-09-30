@@ -1,0 +1,21 @@
+# {{name}}
+
+> Weather for AI agents: current conditions and 1-7 day forecasts for any city or latitude/longitude, paid per call in USDC over x402 on {{network}}. No signup or API key.
+
+Two paid endpoints: `GET /weather?city=London` for current weather ($0.001) and `POST /forecast` with `{"city": "London", "days": 3}` for a daily forecast ($0.002). Pass `city`, or `lat` and `lon`. The first request answers `402 Payment Required`; an x402 client such as AgentCash or awal pays and retries. Error responses (400, 404, 422, 503) are never charged. Data comes from Open-Meteo.
+
+## Docs
+
+- [Agent skill]({{origin}}/.well-known/agent-skills/{{slug}}/SKILL.md): How to call both endpoints with AgentCash, awal or any x402 client, with example responses and errors
+- [OpenAPI document]({{origin}}/openapi.json): Full request and response schemas, prices in `x-payment-info`
+
+## Endpoints
+
+- [GET /weather]({{origin}}/weather?city=London): Current temperature, humidity, wind and conditions. $0.001
+- [POST /forecast]({{origin}}/forecast): Daily max/min temperature, precipitation and conditions for 1-7 days. $0.002
+
+## Optional
+
+- [x402 resources]({{origin}}/.well-known/x402): Paid endpoints, for x402 indexes
+- [Ratings]({{origin}}/feedback/summary): What other agents reported about this service
+- [Source code]({{source}}): The open example this service runs

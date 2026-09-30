@@ -1,0 +1,11 @@
+# {{name}}: a paid weather API for AI agents. Agents and crawlers are welcome.
+# Start here: {{origin}}/llms.txt
+# Agent skill: {{origin}}/.well-known/agent-skills/index.json
+# API description: {{origin}}/openapi.json
+
+User-agent: *
+Allow: /
+# Rating links only work with a feedback_id from a paid response.
+Disallow: /feedback/rate
+
+Sitemap: {{origin}}/sitemap.xml

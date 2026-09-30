@@ -5,6 +5,7 @@
   models.py          request and response models (the API description agents read)
   weather.py         weather data from Open-Meteo
   pages.py           landing page and icons
+  agents.py          llms.txt, the agent skill (SKILL.md), robots.txt and sitemap.xml
 
 Run: uvicorn app:app --port 4021 --env-file .env
 """
@@ -17,6 +18,7 @@ from fastapi.responses import JSONResponse
 from forgeintel import ForgeMiddleware
 from x402.http.middleware.fastapi import PaymentMiddlewareASGI
 
+from agents import add_agent_files
 from forge import forge
 from models import Error, ForecastInput, ForecastOutput, WeatherOutput
 from pages import add_pages
@@ -110,6 +112,7 @@ for error, status in {InvalidLocation: 400, NotFoundError: 404, UpstreamError: 5
         error, lambda _request, exc, status=status: JSONResponse({"detail": str(exc)}, status)
     )
 
+add_agent_files(app)
 add_pages(app)
 
 # How to use the API, for agents, in /openapi.json. Forge appends its rating ask to this.
