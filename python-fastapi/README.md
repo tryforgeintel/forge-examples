@@ -62,7 +62,6 @@ forge = Forge(
     api_key=os.getenv("FORGE_API_KEY", ""),
     public_url=os.getenv("PUBLIC_URL", ""),
     feedback=True,  # ask agents to rate each paid call (off by default)
-    agent_context=True,  # ask for agent name + search; never reject (off by default)
     x402_discovery=True,  # serve /.well-known/x402 for x402 indexes (off by default)
 )
 
@@ -73,7 +72,6 @@ app.add_middleware(ForgeMiddleware, forge=forge)
 | Switch | Here | What it does |
 | --- | --- | --- |
 | `feedback` | `True` | Adds the rating ask to the 402 (and a preview in the Bazaar example), a `forge_feedback` object with a free rating link to paid responses, and the free `/feedback` routes. Off by default. |
-| `agent_context` | `True` | Asks agents for their name and the search that found you, and records it when sent. `AgentContextOptions(required=True)` rejects paid calls without it (HTTP 400, before payment); `AgentContextOptions(search_query=False)` asks for the name only. Off by default. |
 | `x402_discovery` | `True` | Serves `/.well-known/x402`, the list of your paid endpoints that x402 indexes crawl, since this app doesn't serve one. Off by default. With `feedback` on, Forge also serves `/.well-known/forge-feedback.json`. |
 
 With neither switch, Forge still reports every 402 and paid call to your dashboard, and changes nothing agents see.

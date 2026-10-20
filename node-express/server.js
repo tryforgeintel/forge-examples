@@ -23,7 +23,7 @@ app.use(payments);
 app.use(site);
 app.use(agents);
 
-// Your routes. Forge has already removed agent_context from req.query and req.body.
+// Your routes.
 // x402 only charges for 2xx/3xx responses, so a 400 for bad input costs the agent nothing.
 app.get("/weather", async (req, res) => {
   const place = parseLocation(req.query);

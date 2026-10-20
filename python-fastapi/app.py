@@ -69,7 +69,7 @@ def paid(amount: str) -> dict:
     }
 
 
-# Your routes. Forge has already removed agent_context from the query and body.
+# Your routes.
 @app.get(
     "/weather",
     response_model=WeatherOutput,
