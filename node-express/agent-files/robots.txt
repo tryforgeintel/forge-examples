@@ -5,7 +5,5 @@
 
 User-agent: *
 Allow: /
-# Rating links only work with a feedback_id from a paid response.
-Disallow: /feedback/rate
 
 Sitemap: {{origin}}/sitemap.xml

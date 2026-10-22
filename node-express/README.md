@@ -21,59 +21,43 @@ curl localhost:4021/health
 curl -i "localhost:4021/weather?city=London"
 # HTTP/1.1 402 Payment Required, with the challenge in the PAYMENT-REQUIRED header
 
-curl -s -D - -o /dev/null "localhost:4021/weather?city=London" \
-  | grep -i payment-required | cut -d' ' -f2 | tr -d '\r' | base64 -d
-# the decoded challenge: the rating ask, and the forge-feedback and forge-agent-context extensions
-
 curl localhost:4021/llms.txt
 # what the service is, with links (llmstxt.org)
 
 curl localhost:4021/.well-known/agent-skills/index.json
 # the skill index; the skill itself is at /.well-known/agent-skills/skycast/SKILL.md (and /skill.md)
 
+curl localhost:4021/.well-known/x402
+# the paid endpoints, for x402 indexes such as x402scan
+
 curl localhost:4021/openapi.json
-# your spec, with agent context, rating fields and the free /feedback routes
+# the API description
 ```
 
-To make a paid call, use any x402 client funded with Base Sepolia USDC (free from [Circle's faucet](https://faucet.circle.com)). The paid response looks like this:
+To make a paid call, use any x402 client funded with Base Sepolia USDC (free from [Circle's faucet](https://faucet.circle.com)). The response is the app's own, unchanged by Forge:
 
 ```json
 {
   "location": { "name": "London", "country": "United Kingdom" },
-  "current": { "temperature_c": 19.9, "condition": "Overcast" },
-  "forge_feedback": {
-    "feedback_id": "arj7pgqxqVbPyxJWA_qXkg",
-    "feedback_url": "https://your-api/feedback/rate?feedback_id=arj7pgqxqVbPyxJWA_qXkg&outcome=",
-    "rate_this_call": "Please rate this service for other agents: ..."
-  }
+  "current": { "temperature_c": 19.9, "condition": "Overcast" }
 }
 ```
 
-The call, and any rating, shows up under **Activity** for your service at [app.forgeintel.co](https://app.forgeintel.co).
+The visit shows up as a session under **Activity** for your service at [app.forgeintel.co](https://app.forgeintel.co): which agent it was, what it read, the 402 it got and the call it paid for.
 
 ## The Forge part
 
-The whole integration is [`forge.js`](forge.js), with both switches written out, plus one line in [`server.js`](server.js):
+The whole integration is [`forge.js`](forge.js) plus one line in [`server.js`](server.js):
 
 ```js
 // forge.js
-export const forge = createForge({
-  apiKey: process.env.FORGE_API_KEY,
-  publicUrl: process.env.PUBLIC_URL,
-  feedback: true,      // ask agents to rate each paid call (off by default)
-  x402Discovery: true, // serve /.well-known/x402 for x402 indexes (off by default)
-});
+export const forge = createForge({ apiKey: process.env.FORGE_API_KEY });
 
 // server.js
-app.use(forge.middleware()); // first: before payments and /openapi.json
+app.use(forge.middleware()); // first: before payments and your routes
 ```
 
-| Switch | Here | What it does |
-| --- | --- | --- |
-| `feedback` | `true` | Adds the rating ask to the 402 (and a preview in the Bazaar example), a `forge_feedback` object with a free rating link to paid responses, and the free `/feedback` routes. Off by default. |
-| `x402Discovery` | `true` | Serves `/.well-known/x402`, the list of your paid endpoints that x402 indexes crawl, since this app doesn't serve one. Off by default. With `feedback` on, Forge also serves `/.well-known/forge-feedback.json`. |
-
-With neither switch, Forge still reports every 402 and paid call to your dashboard, and changes nothing agents see.
+Forge only observes: requests reach the app unchanged and responses go out exactly as the app sends them.
 
 The rest of the app knows nothing about Forge:
 
@@ -92,6 +76,6 @@ All options: [docs.forgeintel.co/reference/options](https://docs.forgeintel.co/r
 
 - Deploy anywhere that runs Node. Set `FORGE_API_KEY` and `PAY_TO`, and run `npm start`. The server listens on `PORT`.
 - If outbound calls time out with `ETIMEDOUT` on a host far from Open-Meteo's servers, set `NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000`. Node gives each IPv6/IPv4 connection attempt only 250ms by default.
-- Set `PUBLIC_URL` to your public origin, for absolute rating links and the icon in Bazaar listings, and `SERVICE_NAME` to rename the service (default SkyCast).
+- Set `PUBLIC_URL` to your public origin, for the links in the agent files and the icon in Bazaar listings, and `SERVICE_NAME` to rename the service (default SkyCast).
 - For Base mainnet, set `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` ([Coinbase Developer Platform](https://portal.cdp.coinbase.com)). The example then uses Coinbase's facilitator on `eip155:8453`.
 - Add the deployed domain to your service in Forge. Forge then checks your visibility in agent indexes, your search rankings and the health of your paid routes.

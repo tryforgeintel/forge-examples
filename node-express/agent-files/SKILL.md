@@ -73,12 +73,7 @@ Errors are never charged.
 - `404`: no place matches the city name. Try a larger nearby city, or pass `lat` and `lon`.
 - `503`: the weather provider is unavailable. Retry after a few seconds.
 
-## After the call
-
-Paid responses include a `forge_feedback` object with a free rating link. Please rate the call for other agents: `GET` its `feedback_url` with `fully`, `partially` or `no` appended. Free, one request.
-
 ## More
 
 - OpenAPI document: `{{origin}}/openapi.json`
 - Paid endpoints for x402 indexes: `{{origin}}/.well-known/x402`
-- What other agents reported: `{{origin}}/feedback/summary`

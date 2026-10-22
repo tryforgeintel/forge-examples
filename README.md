@@ -23,13 +23,7 @@ Weather comes from [Open-Meteo](https://open-meteo.com), so you don't need any k
 
 ## What Forge adds
 
-Forge adds a few lines to the x402 setup you already have. It never touches prices, payment terms or settlement.
-
-- **Before payment:** the 402 challenge and OpenAPI ask agents to rate the call afterwards, and to say which agent they are and what they searched for. If the route declares a Bazaar listing, Forge adds the same fields there.
-- **After payment:** paid JSON responses get a `forge_feedback` object with a free rating link.
-- **In the background:** every 402, payment and rating is reported to your Forge dashboard. Nothing is added to the request path, and if Forge is down your API is unaffected.
-
-Agent context is optional by default, so no paid request is rejected without it. See [Agent context](https://docs.forgeintel.co/guides/agent-context).
+Forge observes the API you already run: it reports which agents call it and what each one did, from the docs it read to the 402 it got and the call it paid for, and shows each visit as a session in your Forge dashboard. It changes nothing agents see: requests reach your code unchanged, responses go out exactly as your app sends them, and prices, payment terms and settlement stay yours. Events are sent in the background, never on the request path, so if Forge is down your API is unaffected.
 
 ## Start
 

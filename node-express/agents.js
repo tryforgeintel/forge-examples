@@ -4,6 +4,7 @@
 //   /.well-known/agent-skills/<name>/SKILL.md  how to call it, as an Agent Skill
 //   /skill.md                                  the same skill, at the path agents often try first
 //   /robots.txt and /sitemap.xml               crawl rules and the pages above, for crawlers
+//   /.well-known/x402                          the paid endpoints, for x402 indexes such as x402scan
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import express from "express";
@@ -41,6 +42,17 @@ agents.get("/llms.txt", serve(TEXT, llms));
 agents.get("/robots.txt", serve(TEXT, robots));
 agents.get("/sitemap.xml", serve("application/xml; charset=utf-8", sitemap));
 agents.get([SKILL_PATH, "/skill.md", "/SKILL.md"], serve("text/markdown; charset=utf-8", skill));
+
+agents.get("/.well-known/x402", (req, res) => {
+  const origin = originOf(req);
+  res.set("Cache-Control", "public, max-age=300").json({
+    version: 1,
+    resources: [`${origin}/forecast`, `${origin}/weather`],
+    description: "Weather for AI agents: current weather and 1-7 day forecasts, paid per call over x402.",
+    instructions:
+      'Weather for any city. GET /weather?city=London for current conditions ($0.001); POST /forecast with {"city": "London", "days": 3} for a 1-7 day forecast ($0.002). Pass city, or lat and lon. Error responses are never charged.',
+  });
+});
 
 agents.get("/.well-known/agent-skills/index.json", (req, res) => {
   const body = fill(skill, originOf(req));

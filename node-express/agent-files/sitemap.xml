@@ -4,5 +4,4 @@
   <url><loc>{{origin}}/llms.txt</loc></url>
   <url><loc>{{origin}}/.well-known/agent-skills/{{slug}}/SKILL.md</loc></url>
   <url><loc>{{origin}}/openapi.json</loc></url>
-  <url><loc>{{origin}}/feedback/summary</loc></url>
 </urlset>
